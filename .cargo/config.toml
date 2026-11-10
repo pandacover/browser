@@ -1,0 +1,3 @@
+# Keep build artifacts out of OneDrive (thousands of files that would otherwise sync).
+[build]
+target-dir = "C:/Users/luvma/.cargo-target/singularity-browser"

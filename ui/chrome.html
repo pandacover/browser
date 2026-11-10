@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Singularity UI</title>
+  <link rel="stylesheet" href="chrome.css">
+</head>
+<body>
+  <div id="strip">
+    <div id="tabs" role="tablist"></div>
+    <button id="new-tab" class="icon-button" title="New tab (Ctrl+T)" aria-label="New tab">
+      <svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>
+    </button>
+    <div id="strip-fill"></div>
+  </div>
+
+  <div id="toolbar">
+    <button id="back" class="icon-button" title="Back (Alt+Left)" aria-label="Back" disabled>
+      <svg viewBox="0 0 16 16"><path d="M13 8H3M7.5 3.5L3 8l4.5 4.5"/></svg>
+    </button>
+    <button id="forward" class="icon-button" title="Forward (Alt+Right)" aria-label="Forward" disabled>
+      <svg viewBox="0 0 16 16"><path d="M3 8h10M8.5 3.5L13 8l-4.5 4.5"/></svg>
+    </button>
+    <button id="reload" class="icon-button" title="Reload (F5)" aria-label="Reload">
+      <svg class="reload-icon" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.55M13 2.5v3h-3"/></svg>
+      <svg class="stop-icon" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+
+    <form id="address-form" autocomplete="off">
+      <span id="site-icon" aria-hidden="true"></span>
+      <input id="address" type="text" spellcheck="false"
+             placeholder="Search or enter address" aria-label="Address and search bar">
+    </form>
+  </div>
+
+  <template id="tab-template">
+    <div class="tab" role="tab">
+      <span class="tab-icon">
+        <img class="favicon" alt="" draggable="false">
+        <span class="spinner"></span>
+      </span>
+      <span class="tab-title"></span>
+      <button class="tab-close" title="Close tab (Ctrl+W)" aria-label="Close tab" tabindex="-1">
+        <svg viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <script src="address.js"></script>
+  <script src="chrome.js"></script>
+</body>
+</html>

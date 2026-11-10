@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>New Tab</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1b1b1f;
+      --muted: #6b6b75;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #2c2c32; --text: #ececf1; --muted: #a0a0ab; color-scheme: dark; }
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    }
+    body {
+      display: grid;
+      place-items: center;
+    }
+    main { text-align: center; margin-top: -10vh; }
+    .mark {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, #000 0 28%, transparent 29%),
+                  conic-gradient(from 210deg, #6d4aff, #ff5fa2, #ffb648, #6d4aff);
+      box-shadow: 0 8px 40px rgba(109, 74, 255, 0.35);
+    }
+    @media (prefers-color-scheme: dark) {
+      .mark { background: radial-gradient(circle at 50% 50%, #2c2c32 0 28%, transparent 29%),
+                          conic-gradient(from 210deg, #9b85ff, #ff5fa2, #ffb648, #9b85ff); }
+    }
+    h1 { font-weight: 600; font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    p { margin: 0; color: var(--muted); font-size: 14px; }
+    #clock { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true"></div>
+    <h1>Singularity</h1>
+    <p id="clock"></p>
+  </main>
+  <script>
+    const clock = document.getElementById("clock");
+    const fmt = new Intl.DateTimeFormat(undefined, { weekday: "long", hour: "numeric", minute: "2-digit" });
+    const tick = () => (clock.textContent = fmt.format(new Date()));
+    tick();
+    setInterval(tick, 10_000);
+  </script>
+</body>
+</html>
