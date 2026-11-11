@@ -1,36 +1,47 @@
-/* Browser chrome: tab strip (40px) + toolbar (40px).
-   --ui-height must match UI_HEIGHT_DIP in src/browser.rs,
-   --strip must match Palette::strip in src/theme.rs. */
+/* Browser sidebar. Fills its own webview; the page card sits to its right.
+   --strip must match Palette::strip in src/theme.rs (the window behind the card). */
 
 :root {
-  --ui-height: 80px;
-  --strip: #e9e9ee;
-  --toolbar: #ffffff;
-  --text: #1b1b1f;
-  --muted: #6b6b75;
-  --hover: rgba(0, 0, 0, 0.06);
-  --pressed: rgba(0, 0, 0, 0.1);
-  --field: #efeff3;
-  --field-focus: #ffffff;
-  --accent: #6d4aff;
-  --divider: rgba(0, 0, 0, 0.12);
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --strip: #e8e8ec;
+  --text: #1d1d22;
+  --text-soft: #3b3b44;
+  --muted: #74747f;
+  --faint: #a3a3ad;
+  --hover: rgba(20, 20, 40, 0.055);
+  --pressed: rgba(20, 20, 40, 0.09);
+  --field: rgba(20, 20, 40, 0.05);
+  --field-hover: rgba(20, 20, 40, 0.075);
+  --tab-active: #ffffff;
+  --tab-active-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 1px 2px rgba(15, 15, 30, 0.08), 0 0 0 0.5px rgba(15, 15, 30, 0.07);
+  --accent: #4b5bd6;
+  --divider: rgba(20, 20, 40, 0.08);
+  --close-hover: #c42b1c;
+  --kbd: rgba(20, 20, 40, 0.06);
+  --menu: #ffffff;
+  --menu-shadow: 0 0 0 0.5px rgba(15, 15, 30, 0.12), 0 8px 24px rgba(15, 15, 30, 0.16);
+  /* The current space's color (set from the host's state). */
+  --space: var(--accent);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --strip: #1f1f23;
-    --toolbar: #2c2c32;
-    --text: #ececf1;
-    --muted: #a0a0ab;
-    --hover: rgba(255, 255, 255, 0.07);
-    --pressed: rgba(255, 255, 255, 0.12);
-    --field: #1f1f23;
-    --field-focus: #18181b;
-    --accent: #9b85ff;
-    --divider: rgba(255, 255, 255, 0.12);
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --strip: #18181b;
+    --text: #ececef;
+    --text-soft: #c9c9d0;
+    --muted: #8d8d97;
+    --faint: #5f5f69;
+    --hover: rgba(255, 255, 255, 0.05);
+    --pressed: rgba(255, 255, 255, 0.085);
+    --field: rgba(255, 255, 255, 0.055);
+    --field-hover: rgba(255, 255, 255, 0.08);
+    --tab-active: #2a2a2f;
+    --tab-active-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.35);
+    --accent: #8c9bff;
+    --divider: rgba(255, 255, 255, 0.07);
+    --kbd: rgba(255, 255, 255, 0.07);
+    --menu: #2b2b31;
+    --menu-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.45);
     color-scheme: dark;
   }
 }
@@ -39,11 +50,12 @@
 
 html, body {
   margin: 0;
-  height: var(--ui-height);
+  height: 100%;
   overflow: hidden;
   background: var(--strip);
   color: var(--text);
-  font: 12px/1.2 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font: 13px/1.25 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -54,14 +66,16 @@ button {
   border: 0;
   background: none;
   padding: 0;
+  outline: none;
 }
 
 svg {
   width: 16px;
   height: 16px;
+  flex: none;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.4;
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -70,77 +84,193 @@ svg {
   flex: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--muted);
+  transition: background-color 120ms ease, color 120ms ease;
 }
-.icon-button:hover:not(:disabled) { background: var(--hover); }
+.icon-button:hover:not(:disabled) { background: var(--hover); color: var(--text); }
 .icon-button:active:not(:disabled) { background: var(--pressed); }
 .icon-button:disabled { opacity: 0.35; }
 
-/* ------------------------------------------------------------------ tab strip */
-
-#strip {
-  height: 40px;
+#sidebar {
+  position: relative;
+  height: 100%;
   display: flex;
-  align-items: flex-end;
-  padding: 0 6px;
-  gap: 2px;
+  flex-direction: column;
+  padding: 0 10px 10px 10px;
 }
+/* Slid out over the page: a hairline separates it from the page beneath. */
+body.peek #sidebar { box-shadow: inset -1px 0 0 var(--divider); }
+
+/* ------------------------------------------------------------------ title bar row */
+
+#topbar {
+  flex: none;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin: 0 -2px;
+  app-region: drag;
+}
+#topbar button { app-region: no-drag; }
+#topbar .spacer { flex: 1; min-width: 8px; }
+
+#reload .stop-icon { display: none; }
+#reload.loading .stop-icon { display: block; }
+#reload.loading .reload-icon { display: none; }
+
+#window-controls { display: flex; gap: 1px; }
+/* macOS draws its own window buttons (the traffic lights) at the top left of the sidebar. */
+body.mac #window-controls { display: none; }
+body.mac #topbar { padding-left: 64px; }
+#win-max .restore-icon { display: none; }
+body.maximized #win-max .restore-icon { display: block; }
+body.maximized #win-max .max-icon { display: none; }
+#win-close:hover { background: var(--close-hover); color: #fff; }
+
+/* ------------------------------------------------------------------ address */
+
+#address-row {
+  position: relative;
+  flex: none;
+  margin: 4px 0 14px;
+}
+
+#address {
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 68px 0 12px;
+  border-radius: 11px;
+  background: var(--field);
+  text-align: left;
+  color: var(--text-soft);
+  transition: background-color 120ms ease;
+}
+#address:hover { background: var(--field-hover); }
+
+#site-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+#site-icon svg { width: 14px; height: 14px; stroke-width: 1.6; }
+#site-icon.insecure { color: #d9822b; }
+
+#address-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, #000 calc(100% - 14px), transparent);
+}
+#address-text:empty::before { content: "Search or enter address"; color: var(--muted); }
+
+#copy-link,
+#bookmark {
+  position: absolute;
+  top: 4px;
+  right: 34px;
+  width: 30px;
+  height: 30px;
+  opacity: 0;
+  transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+#bookmark { right: 4px; }
+#address-row:hover #copy-link:not(:disabled),
+#address-row:hover #bookmark:not(:disabled),
+#bookmark.on { opacity: 1; }
+#bookmark.on { color: var(--space); }
+#bookmark.on svg { fill: currentColor; }
+#copy-link .done-icon { display: none; }
+#copy-link.done { opacity: 1; color: var(--text); }
+#copy-link.done .done-icon { display: block; }
+#copy-link.done .copy-icon { display: none; }
+
+/* ------------------------------------------------------------------ tabs */
+
+#tab-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -4px;
+  padding: 0 4px;
+  scrollbar-width: none;
+}
+#tab-list:hover { scrollbar-width: thin; }
+#list-fill { flex: 1; min-height: 24px; }
 
 #tabs {
   display: flex;
-  align-items: flex-end;
-  min-width: 0;
-  flex: 0 1 auto;
-  height: 100%;
+  flex-direction: column;
   gap: 2px;
 }
 
-#strip-fill { flex: 1; height: 100%; }
-
-#new-tab { margin-bottom: 4px; }
-
-.tab {
+.tab-row {
   position: relative;
-  flex: 0 1 220px;
-  min-width: 40px;
-  height: 34px;
+  flex: none;
+  width: 100%;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 6px 0 10px;
-  border-radius: 8px 8px 0 0;
-  color: var(--muted);
+  gap: 10px;
+  padding: 0 5px 0 11px;
+  border-radius: 10px;
+  color: var(--text-soft);
+  text-align: left;
   cursor: default;
   transition: background-color 120ms ease;
 }
-.tab:hover:not(.active) {
-  background: var(--hover);
-  color: var(--text);
+.tab-row:hover:not(.active) { background: var(--hover); }
+.tab-row:active:not(.active) { background: var(--pressed); }
+
+#new-tab {
+  color: var(--muted);
+  margin-bottom: 4px;
 }
+#new-tab:hover { color: var(--text); }
+#new-tab .tab-icon { display: grid; place-items: center; }
+kbd {
+  flex: none;
+  margin-right: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--kbd);
+  color: var(--muted);
+  font: 11px/1.3 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+#new-tab:hover kbd { opacity: 1; }
+
 .tab.active {
-  background: var(--toolbar);
+  background: var(--tab-active);
+  box-shadow: var(--tab-active-shadow);
   color: var(--text);
-  z-index: 1;
-}
-/* Divider between inactive tabs. */
-.tab:not(.active):not(:hover) + .tab:not(.active):not(:hover)::before {
-  content: "";
-  position: absolute;
-  left: -2px;
-  top: 9px;
-  bottom: 9px;
-  width: 1px;
-  background: var(--divider);
 }
 .tab.dragging {
   z-index: 2;
-  box-shadow: var(--shadow);
+  box-shadow: var(--tab-active-shadow), 0 6px 16px rgba(0, 0, 0, 0.18);
+  background: var(--tab-active);
   transition: none;
 }
 .tab.suspended .tab-icon,
 .tab.suspended .tab-title { opacity: 0.55; }
+.tab.entering { animation: tab-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes tab-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
 
 .tab-icon {
   position: relative;
@@ -152,19 +282,20 @@ svg {
   width: 16px;
   height: 16px;
   display: block;
+  border-radius: 3px;
 }
 .favicon.missing {
   /* Fallback globe when a page has no favicon. */
-  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a8a95' stroke-width='1.2'%3E%3Ccircle cx='8' cy='8' r='6.2'/%3E%3Cpath d='M1.8 8h12.4M8 1.8c-2.2 2.5-2.2 9.9 0 12.4M8 1.8c2.2 2.5 2.2 9.9 0 12.4'/%3E%3C/svg%3E");
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238d8d97' stroke-width='1.3'%3E%3Ccircle cx='8' cy='8' r='6.2'/%3E%3Cpath d='M1.8 8h12.4M8 1.8c-2.2 2.5-2.2 9.9 0 12.4M8 1.8c2.2 2.5 2.2 9.9 0 12.4'/%3E%3C/svg%3E");
 }
 .spinner {
   display: none;
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  border: 2px solid var(--divider);
-  border-top-color: var(--accent);
-  animation: spin 0.8s linear infinite;
+  stroke: var(--space);
+  stroke-width: 1.8;
+  stroke-dasharray: 26 38;
+  animation: spin 0.9s linear infinite;
 }
 .tab.loading .spinner { display: block; }
 .tab.loading .favicon { visibility: hidden; }
@@ -175,88 +306,229 @@ svg {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
-  /* Fade out long titles instead of an ellipsis, like most modern browsers. */
-  mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+  /* Fade out long titles instead of an ellipsis. */
+  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent);
 }
 
-.tab-close {
+.tab-close,
+.tab-audio,
+.tab-home,
+.tab-split {
   flex: none;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  opacity: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: var(--muted);
 }
-.tab-close svg { width: 12px; height: 12px; stroke-width: 1.6; }
-.tab:hover .tab-close,
-.tab.active .tab-close { opacity: 1; }
-.tab-close:hover { background: var(--pressed); }
+.tab-close svg,
+.tab-audio svg,
+.tab-home svg,
+.tab-split svg { width: 14px; height: 14px; }
+.tab-close { display: none; }
+.tab:hover .tab-close { display: grid; }
+/* An unloaded pinned tab has nothing to close. */
+.tab.unloaded:hover .tab-close { display: none; }
+.tab-close:hover,
+.tab-audio:hover,
+.tab-home:hover { background: var(--pressed); color: var(--text); }
 
-/* Very narrow tabs show only the favicon (or only the close button when active). */
-.tab.narrow { padding: 0; justify-content: center; }
-.tab.narrow .tab-title { display: none; }
-.tab.narrow:not(.active) .tab-close { display: none; }
-.tab.narrow.active .tab-icon { display: none; }
+/* A pinned tab that has left its own page offers the way back. */
+.tab-home { display: none; }
+.tab.away:hover .tab-home { display: grid; }
 
-/* ------------------------------------------------------------------ toolbar */
+.tab-split { display: none; width: 18px; }
+.tab.in-split .tab-split { display: grid; }
+.tab.in-split:hover .tab-split { display: none; }
+/* The other side of the split on screen. */
+.tab.split-partner { background: color-mix(in srgb, var(--tab-active) 50%, transparent); }
 
-#toolbar {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 8px 4px;
-  background: var(--toolbar);
-  box-shadow: inset 0 -1px 0 var(--divider);
-}
+.tab-audio { display: none; }
+.tab.audible .tab-audio,
+.tab.muted .tab-audio { display: grid; }
+.tab-audio .muted-icon { display: none; }
+.tab.muted .tab-audio .muted-icon { display: block; }
+.tab.muted .tab-audio .sound-icon { display: none; }
 
-#reload .stop-icon { display: none; }
-#reload.loading .stop-icon { display: block; }
-#reload.loading .reload-icon { display: none; }
+/* ------------------------------------------------------------------ space header and today line */
 
-#address-form {
-  flex: 1;
-  min-width: 0;
-  height: 30px;
-  margin-left: 6px;
+#space-header {
+  flex: none;
+  height: 26px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  border-radius: 15px;
-  background: var(--field);
-  border: 1px solid transparent;
-  transition: background-color 120ms ease, border-color 120ms ease;
-}
-#address-form:hover { border-color: var(--divider); }
-#address-form:focus-within {
-  background: var(--field-focus);
-  border-color: var(--accent);
-}
-
-#site-icon {
-  flex: none;
-  width: 14px;
-  height: 14px;
+  padding: 0 11px;
+  margin-bottom: 2px;
   color: var(--muted);
-  display: grid;
-  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
-#site-icon svg { width: 14px; height: 14px; }
-#site-icon.insecure { color: #d9822b; }
-
-#address {
+#space-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--space);
+}
+#space-name {
   flex: 1;
   min-width: 0;
-  height: 100%;
-  border: 0;
-  outline: 0;
-  background: none;
-  color: var(--text);
-  font: 13px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  user-select: text;
-  -webkit-user-select: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-#address::placeholder { color: var(--muted); }
-#address::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+#space-rename {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  outline: 1.5px solid var(--space);
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  user-select: text;
+}
+
+#today {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+.divider {
+  position: relative;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 11px;
+}
+.divider .line {
+  flex: 1;
+  height: 1px;
+  background: var(--divider);
+}
+/* Sits over the end of the line, which shows through while the button is hidden. */
+#clear-today {
+  position: absolute;
+  right: 4px;
+  padding: 1px 6px;
+  background: var(--strip);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 11.5px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+body.has-today #today:hover #clear-today { opacity: 1; }
+#clear-today:hover { background: linear-gradient(var(--hover), var(--hover)), var(--strip); color: var(--text); }
+
+/* ------------------------------------------------------------------ footer: archive, spaces */
+
+#footer {
+  flex: none;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px -2px 0;
+}
+#space-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+.space-button {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  transition: background-color 120ms ease;
+}
+.space-button:hover { background: var(--hover); }
+.space-button .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color);
+  opacity: 0.55;
+  transition: opacity 120ms ease, box-shadow 120ms ease;
+}
+.space-button:hover .dot { opacity: 0.85; }
+.space-button.current .dot {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--strip), 0 0 0 3.5px var(--color);
+}
+
+/* ------------------------------------------------------------------ menus */
+
+#menu {
+  position: fixed;
+  z-index: 10;
+  min-width: 190px;
+  max-width: calc(100vw - 12px);
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--menu);
+  box-shadow: var(--menu-shadow);
+  font-size: 12.5px;
+  animation: menu-in 90ms ease-out;
+}
+#menu[hidden] { display: none; }
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(0.98); }
+}
+.menu-item {
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 6px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.menu-item:hover:not(:disabled) { background: var(--hover); }
+.menu-item:disabled { color: var(--faint); }
+.menu-item.danger:hover:not(:disabled) { background: var(--close-hover); color: #fff; }
+.menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--divider);
+}
+.menu-swatches {
+  display: flex;
+  gap: 7px;
+  padding: 6px 10px;
+}
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color);
+}
+.swatch.selected { box-shadow: 0 0 0 2px var(--menu), 0 0 0 3.5px var(--color); }
+
+/* ------------------------------------------------------------------ resize */
+
+#resize-handle {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+body.peek #resize-handle { display: none; }

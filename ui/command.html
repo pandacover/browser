@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Command bar</title>
+  <link rel="stylesheet" href="command.css">
+</head>
+<body>
+  <!-- Floats over the page (Ctrl+T / Ctrl+L) in its own popup window. The host sizes the
+       window to #box, and only shows it once this page has drawn what it was opened with. -->
+  <div id="box">
+    <form id="form" autocomplete="off">
+      <svg class="lead" viewBox="0 0 16 16"><circle cx="7.25" cy="7.25" r="4.5"/><path d="M10.5 10.5L13.5 13.5"/></svg>
+      <input id="query" type="text" spellcheck="false" placeholder="Search or enter address" aria-label="Search or enter address">
+    </form>
+    <ul id="results" role="listbox"></ul>
+  </div>
+
+  <script src="address.js"></script>
+  <script src="command.js"></script>
+</body>
+</html>

@@ -4,57 +4,72 @@
   <meta charset="utf-8">
   <title>New Tab</title>
   <style>
+    /* --bg must match Palette::page in src/theme.rs. */
     :root {
-      --bg: #ffffff;
-      --text: #1b1b1f;
-      --muted: #6b6b75;
+      --bg: #fafafb;
+      --text: #1d1d22;
+      --muted: #8a8a94;
+      --glow: rgba(90, 100, 160, 0.06);
       color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #2c2c32; --text: #ececf1; --muted: #a0a0ab; color-scheme: dark; }
+      :root { --bg: #212125; --text: #ececef; --muted: #85858f; --glow: rgba(160, 170, 255, 0.045); color-scheme: dark; }
     }
     html, body {
       margin: 0;
       height: 100%;
+      overflow: hidden;
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
     }
     body {
-      display: grid;
-      place-items: center;
+      background-image: radial-gradient(120% 70% at 0% 100%, var(--glow), transparent 60%);
     }
-    main { text-align: center; margin-top: -10vh; }
-    .mark {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 20px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 50% 50%, #000 0 28%, transparent 29%),
-                  conic-gradient(from 210deg, #6d4aff, #ff5fa2, #ffb648, #6d4aff);
-      box-shadow: 0 8px 40px rgba(109, 74, 255, 0.35);
+    /* Bottom left, like a lock screen: out of the way of the command bar. */
+    main {
+      position: fixed;
+      left: 56px;
+      bottom: 48px;
+      opacity: 0;
+      animation: in 400ms 60ms ease-out forwards;
     }
-    @media (prefers-color-scheme: dark) {
-      .mark { background: radial-gradient(circle at 50% 50%, #2c2c32 0 28%, transparent 29%),
-                          conic-gradient(from 210deg, #9b85ff, #ff5fa2, #ffb648, #9b85ff); }
+    @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    #time {
+      font-size: 76px;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
-    h1 { font-weight: 600; font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
-    p { margin: 0; color: var(--muted); font-size: 14px; }
-    #clock { font-variant-numeric: tabular-nums; }
+    #date {
+      margin-top: 10px;
+      font-size: 16px;
+      color: var(--muted);
+      letter-spacing: 0.005em;
+    }
   </style>
 </head>
 <body>
   <main>
-    <div class="mark" aria-hidden="true"></div>
-    <h1>Singularity</h1>
-    <p id="clock"></p>
+    <div id="time"></div>
+    <div id="date"></div>
   </main>
   <script>
-    const clock = document.getElementById("clock");
-    const fmt = new Intl.DateTimeFormat(undefined, { weekday: "long", hour: "numeric", minute: "2-digit" });
-    const tick = () => (clock.textContent = fmt.format(new Date()));
+    const time = document.getElementById("time");
+    const date = document.getElementById("date");
+    const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+    const dateFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+    function tick() {
+      const now = new Date();
+      // Drop the AM/PM marker for a cleaner clock; it's obvious from context.
+      time.textContent = timeFmt.format(now).replace(/\s?[AP]\.?M\.?$/i, "");
+      date.textContent = dateFmt.format(now);
+      setTimeout(tick, 60_000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 20);
+    }
     tick();
-    setInterval(tick, 10_000);
   </script>
 </body>
 </html>
