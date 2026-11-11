@@ -945,7 +945,8 @@ fn serve_ui(ui_dir: &str, request: &Request<Vec<u8>>) -> Response<Cow<'static, [
 
 /// The file a URL path names inside the UI folder. Nothing outside it can be named.
 fn ui_file(ui_dir: &Path, path: &str) -> Option<PathBuf> {
-    let path = path.trim_start_matches('/');
+    // Only the one leading slash: "//x" leaves an empty part, which is refused below.
+    let path = path.strip_prefix('/').unwrap_or(path);
     let parts: Vec<&str> = path.split('/').collect();
     if path.is_empty() || parts.iter().any(|p| p.is_empty() || *p == "." || *p == ".." || p.contains('\\')) {
         return None;
