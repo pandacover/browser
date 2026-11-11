@@ -206,6 +206,10 @@ resize it. With the sidebar hidden, touch the window's left edge to slide it out
 
 ## Tests
 
+Every push to `main` and every pull request runs `.github/workflows/build.yml` on GitHub:
+a release build and `cargo test` on Windows x64 and macOS Apple Silicon, side by side. Each
+run keeps both builds (the binary with its `ui/` folder) as downloadable artifacts.
+
 ```powershell
 node tests/address.test.js
 cargo test

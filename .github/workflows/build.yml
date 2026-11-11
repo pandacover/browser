@@ -1,0 +1,75 @@
+# Builds and tests the browser on Windows (x64, WebView2) and macOS (Apple Silicon, WebKit)
+# at the same time, and keeps each build as a downloadable artifact (the binary plus ui/).
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # .cargo/config.toml points the build folder at a path on the developer's PC; build in the
+  # workspace instead (the environment variable wins over the config file).
+  CARGO_TARGET_DIR: ${{ github.workspace }}/target
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Let the other platform finish when one fails, to see both results.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            exe: browser.exe
+            artifact: browser-windows-x64
+          - name: macOS Apple Silicon
+            os: macos-latest
+            target: aarch64-apple-darwin
+            exe: browser
+            artifact: browser-macos-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build (release)
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      # Same profile and target as the build, so the dependencies are reused.
+      - name: Test
+        run: cargo test --release --locked --target ${{ matrix.target }}
+
+      # A release build reads ui/ from a folder next to it, so ship them together.
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/${{ matrix.exe }}" dist/
+          cp -R ui dist/ui
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+          if-no-files-found: error
